@@ -18,8 +18,8 @@ TEAM_PASSWORD = "666"
 # 2. 邮箱设置 (以腾讯企业邮为例)
 SMTP_SERVER = 'smtp.exmail.qq.com'
 SMTP_PORT = 465
-SENDER_EMAIL = tylerqin@gtiggs.com 
-SENDER_PASSWORD = vfm3x9Rd74PMCF56
+SENDER_EMAIL = 'tylerqin@gtiggs.com' 
+SENDER_PASSWORD = 'vfm3x9Rd74PMCF56'
 # ====================================
 
 def process_img(b64):
@@ -99,3 +99,4 @@ def upload():
 
 if __name__ == '__main__':
     app.run()
+
