@@ -1,61 +1,136 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>拍照助手</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>试身照助手</title>
     <style>
-        body { padding: 20px; font-family: sans-serif; background: #f5f5f5; }
-        .box { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        input { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
+        body { font-family: sans-serif; background: #f2f2f2; margin: 0; padding: 15px; }
+        .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+        h3 { margin: 0 0 10px 0; font-size: 16px; color: #333; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        
+        /* 胶囊选择器样式 */
+        .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+        .chip { background: #eee; padding: 8px 12px; border-radius: 20px; font-size: 14px; cursor: pointer; user-select: none; }
+        .chip input { display: none; }
+        .chip:has(input:checked) { background: #e7f7ed; color: #07c160; border: 1px solid #07c160; }
+        
+        /* 拍照区域 */
         .grid { display: flex; gap: 5px; }
-        .pic { flex: 1; height: 100px; background: #eee; border: 1px dashed #999; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;}
-        .pic img { width: 100%; height: 100%; object-fit: cover; display: none; }
-        button { width: 100%; background: #07c160; color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; }
+        .pic { flex: 1; aspect-ratio: 3/4; background: #fafafa; border: 2px dashed #ccc; border-radius: 6px; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .pic.done { border-style: solid; border-color: #07c160; }
+        .pic img { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
+        
+        button { width: 100%; padding: 15px; background: #07c160; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h3>1. 输入信息</h3>
-        <input type="text" id="txt" placeholder="文本内容 (如: 款号)">
-        <input type="text" id="email" placeholder="收件人邮箱" value="your_boss@company.com">
+
+<div class="card">
+    <h3>1. 身份验证</h3>
+    <input type="password" id="pass" placeholder="请输入团队访问密码">
+    <input type="text" id="sender" placeholder="你的姓名 (如: 张三)">
+</div>
+
+<div class="card">
+    <h3>2. 选择收件人</h3>
+    <div class="chip-group" id="presetEmails">
+        <!-- 【请修改这里：常用联系人】 -->
+        <label class="chip"><input type="checkbox" value="boss@company.com"> 老板</label>
+        <label class="chip"><input type="checkbox" value="design@company.com"> 设计部</label>
+        <label class="chip"><input type="checkbox" value="factory@company.com"> 工厂</label>
     </div>
-    <div class="box">
-        <h3>2. 拍照 (点击方块)</h3>
-        <div class="grid">
-            <div class="pic" onclick="clickInput(0)"><img id="img0"><span>正</span></div>
-            <div class="pic" onclick="clickInput(1)"><img id="img1"><span>侧</span></div>
-            <div class="pic" onclick="clickInput(2)"><img id="img2"><span>背</span></div>
-        </div>
-        <input type="file" id="f0" hidden accept="image/*" onchange="read(this,0)">
-        <input type="file" id="f1" hidden accept="image/*" onchange="read(this,1)">
-        <input type="file" id="f2" hidden accept="image/*" onchange="read(this,2)">
+    <input type="text" id="extraEmail" placeholder="临时抄送 (如有多个用逗号隔开)">
+</div>
+
+<div class="card">
+    <h3>3. 内容与拍照</h3>
+    <input type="text" id="txt" placeholder="文本内容 (如: 款号)">
+    <div class="grid">
+        <div class="pic" onclick="cam(0)"><img id="img0"><span>正</span></div>
+        <div class="pic" onclick="cam(1)"><img id="img1"><span>侧</span></div>
+        <div class="pic" onclick="cam(2)"><img id="img2"><span>背</span></div>
     </div>
-    <button onclick="upload()" id="btn">生成 PPT 并发送</button>
-    <script>
-        let imgs = [null, null, null];
-        function clickInput(i) { document.getElementById('f'+i).click(); }
-        function read(el, i) {
-            let reader = new FileReader();
-            reader.onload = e => {
-                imgs[i] = e.target.result;
-                document.getElementById('img'+i).src = e.target.result;
-                document.getElementById('img'+i).style.display = 'block';
-            };
-            reader.readAsDataURL(el.files[0]);
-        }
-        async function upload() {
-            if(!imgs[0] || !imgs[1] || !imgs[2]) return alert('请拍完3张照片');
-            document.getElementById('btn').innerText = '正在上传处理中...';
-            let res = await fetch('/upload', {
+    <!-- 隐藏的相机控件 -->
+    <input type="file" id="f0" hidden accept="image/*" capture="environment" onchange="read(this,0)">
+    <input type="file" id="f1" hidden accept="image/*" capture="environment" onchange="read(this,1)">
+    <input type="file" id="f2" hidden accept="image/*" capture="environment" onchange="read(this,2)">
+</div>
+
+<button onclick="submitData()" id="btn">生成 PPT 并发送</button>
+
+<script>
+    const STORAGE_KEY = 'ppt_recipients_cache';
+    let imgs = [null, null, null];
+
+    // 初始化：读取上次勾选的收件人
+    document.addEventListener('DOMContentLoaded', () => {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        document.querySelectorAll('#presetEmails input').forEach(cb => {
+            if(saved.includes(cb.value)) cb.checked = true;
+        });
+    });
+
+    function cam(i) { document.getElementById('f'+i).click(); }
+    
+    function read(el, i) {
+        const f = el.files[0];
+        if(!f) return;
+        const r = new FileReader();
+        r.onload = e => {
+            imgs[i] = e.target.result;
+            document.getElementById('img'+i).src = e.target.result;
+            document.getElementById('img'+i).style.display = 'block';
+            el.parentElement.classList.add('done');
+        };
+        r.readAsDataURL(f);
+    }
+
+    async function submitData() {
+        const pass = document.getElementById('pass').value;
+        const sender = document.getElementById('sender').value;
+        const text = document.getElementById('txt').value;
+        
+        // 处理收件人
+        const checkedBoxes = Array.from(document.querySelectorAll('#presetEmails input:checked'));
+        const checkedVals = checkedBoxes.map(c => c.value);
+        const extra = document.getElementById('extraEmail').value;
+        let finalEmails = [...checkedVals];
+        if(extra) finalEmails = finalEmails.concat(extra.split(/[,，\s]+/).filter(e=>e));
+
+        if(!pass) return alert("请输入密码");
+        if(!sender) return alert("请输入姓名");
+        if(!text) return alert("请输入文本内容");
+        if(finalEmails.length === 0) return alert("请选择至少一个收件人");
+        if(!imgs[0] || !imgs[1] || !imgs[2]) return alert("请拍完三张照片");
+
+        // 记忆本次选择
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(checkedVals));
+
+        document.getElementById('btn').innerText = "处理中(约10秒)...";
+        document.getElementById('btn').disabled = true;
+
+        try {
+            const res = await fetch('/upload', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({text: document.getElementById('txt').value, recipients: document.getElementById('email').value, images: imgs})
+                body: JSON.stringify({pass, sender, text, recipients: finalEmails.join(','), images: imgs})
             });
-            if(res.ok) alert('成功发送！');
-            else alert('发送失败');
-            document.getElementById('btn').innerText = '生成 PPT 并发送';
+            const data = await res.json();
+            if(res.ok) {
+                alert("发送成功！");
+                location.reload();
+            } else {
+                alert("失败: " + data.msg);
+                document.getElementById('btn').disabled = false;
+                document.getElementById('btn').innerText = "生成 PPT 并发送";
+            }
+        } catch(e) {
+            alert("网络错误");
+            document.getElementById('btn').disabled = false;
         }
-    </script>
+    }
+</script>
 </body>
 </html>
