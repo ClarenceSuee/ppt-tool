@@ -3,132 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>试身照助手</title>
+    <title>PPT助手</title>
     <style>
-        body { font-family: sans-serif; background: #f2f2f2; margin: 0; padding: 15px; }
-        .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
-        h3 { margin: 0 0 10px 0; font-size: 16px; color: #333; }
-        input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #f2f2f2; margin: 0; padding: 15px; }
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        h3 { margin: 0 0 15px 0; font-size: 16px; border-left: 4px solid #07c160; padding-left: 10px; }
         
-        /* 胶囊选择器样式 */
-        .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-        .chip { background: #eee; padding: 8px 12px; border-radius: 20px; font-size: 14px; cursor: pointer; user-select: none; }
-        .chip input { display: none; }
-        .chip:has(input:checked) { background: #e7f7ed; color: #07c160; border: 1px solid #07c160; }
+        /* 输入框样式 */
+        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         
         /* 拍照区域 */
-        .grid { display: flex; gap: 5px; }
-        .pic { flex: 1; aspect-ratio: 3/4; background: #fafafa; border: 2px dashed #ccc; border-radius: 6px; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .pic.done { border-style: solid; border-color: #07c160; }
-        .pic img { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
+        .photo-grid { display: flex; gap: 8px; margin-top: 10px; }
+        .photo-box { flex: 1; aspect-ratio: 3/4; background: #f8f8f8; border: 2px dashed #ccc; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #999; }
+        .photo-box.done { border-style: solid; border-color: #07c160; }
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; border-radius: 6px; display: none; }
         
-        button { width: 100%; padding: 15px; background: #07c160; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; }
+        /* 按钮样式 */
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-blue { background: #1976d2; color: white; }
+        .btn-green { background: #07c160; color: white; }
+        .btn:disabled { background: #ccc; }
+
+        /* 收件人标签样式 */
+        .tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+        .tag { background: #e0e0e0; padding: 6px 12px; border-radius: 20px; font-size: 14px; cursor: pointer; user-select: none; transition: 0.2s; }
+        .tag:active { transform: scale(0.95); }
+        .tag.selected { background: #e7f7ed; color: #07c160; border: 1px solid #07c160; }
+
+        /* 预览区域 */
+        #previewSection, #emailSection { display: none; } /* 初始隐藏 */
+        .preview-img { width: 100%; border: 1px solid #eee; border-radius: 4px; margin-bottom: 15px; }
+        
+        /* 邮件预览框 */
+        .email-preview-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; font-size: 14px; line-height: 1.6; color: #555; margin-bottom: 15px; }
+        .email-meta { font-weight: bold; color: #333; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
     </style>
 </head>
 <body>
 
+<!-- 模块1: 制作与预览 -->
 <div class="card">
-    <h3>1. 身份验证</h3>
-    <input type="password" id="pass" placeholder="请输入团队访问密码">
-    <input type="text" id="sender" placeholder="你的姓名 (如: 张三)">
-</div>
-
-<div class="card">
-    <h3>2. 选择收件人</h3>
-    <div class="chip-group" id="presetEmails">
-        <!-- 【请修改这里：常用联系人】 -->
-        <label class="chip"><input type="checkbox" value="boss@company.com"> 老板</label>
-        <label class="chip"><input type="checkbox" value="design@company.com"> 设计部</label>
-        <label class="chip"><input type="checkbox" value="factory@company.com"> 工厂</label>
+    <h3>第一步: 制作 PPT</h3>
+    <input type="text" id="txt" placeholder="请输入文本内容 (如: 24SS-001)">
+    
+    <div class="photo-grid">
+        <div class="photo-box" onclick="cam(0)"><img id="img0"><span>正视图</span></div>
+        <div class="photo-box" onclick="cam(1)"><img id="img1"><span>侧视图</span></div>
+        <div class="photo-box" onclick="cam(2)"><img id="img2"><span>背视图</span></div>
     </div>
-    <input type="text" id="extraEmail" placeholder="临时抄送 (如有多个用逗号隔开)">
-</div>
-
-<div class="card">
-    <h3>3. 内容与拍照</h3>
-    <input type="text" id="txt" placeholder="文本内容 (如: 款号)">
-    <div class="grid">
-        <div class="pic" onclick="cam(0)"><img id="img0"><span>正</span></div>
-        <div class="pic" onclick="cam(1)"><img id="img1"><span>侧</span></div>
-        <div class="pic" onclick="cam(2)"><img id="img2"><span>背</span></div>
-    </div>
-    <!-- 隐藏的相机控件 -->
+    
+    <button class="btn btn-blue" id="btnPreview" onclick="generatePreview()">生成 PPT 预览</button>
+    
+    <!-- 隐藏的文件控件 -->
     <input type="file" id="f0" hidden accept="image/*" capture="environment" onchange="read(this,0)">
     <input type="file" id="f1" hidden accept="image/*" capture="environment" onchange="read(this,1)">
     <input type="file" id="f2" hidden accept="image/*" capture="environment" onchange="read(this,2)">
 </div>
 
-<button onclick="submitData()" id="btn">生成 PPT 并发送</button>
+<!-- 模块1.5: PPT预览显示区 -->
+<div class="card" id="previewSection">
+    <h3>PPT 效果预览</h3>
+    <img id="pptPreviewImg" class="preview-img">
+    <p style="text-align:center; color:#666; font-size:12px;">(这是根据您的照片模拟的排版效果)</p>
+</div>
+
+<!-- 模块2: 邮件发送 -->
+<div class="card" id="emailSection">
+    <h3>第二步: 发送邮件</h3>
+    
+    <!-- 收件人标签 -->
+    <div style="margin-bottom:5px; font-size:14px; color:#666;">点击标签添加收件人:</div>
+    <div class="tags-container">
+        <!-- 【请在这里配置你的常用联系人】 -->
+        <div class="tag" onclick="addEmail('boss@company.com')">老板</div>
+        <div class="tag" onclick="addEmail('design@company.com')">设计部</div>
+        <div class="tag" onclick="addEmail('factory@company.com')">工厂</div>
+        <div class="tag" onclick="addEmail('sales@company.com')">销售</div>
+    </div>
+    <input type="text" id="emailInput" placeholder="收件人 (点击上方标签自动填入, 可手写)">
+
+    <!-- 邮件预览窗口 (只读) -->
+    <div style="margin-top:20px; font-size:14px; color:#666;">邮件内容预览:</div>
+    <div class="email-preview-box">
+        <div class="email-meta">收件人: <span id="prevTo"></span></div>
+        <div class="email-meta">主题: <span id="prevSubj"></span></div>
+        Hi All,<br>
+        附件是 [<span id="prevTxt"></span>] 的试身照片, 请注意查收.<br>
+        其中的文本内容是: <span id="prevTxt2"></span>.<br>
+        <span style="font-size:12px; color:#999;">[附件: .pptx]</span>
+    </div>
+
+    <button class="btn btn-green" id="btnSend" onclick="sendEmail()">确认发送邮件</button>
+</div>
 
 <script>
-    const STORAGE_KEY = 'ppt_recipients_cache';
-    let imgs = [null, null, null];
+    let images = [null, null, null];
+    let isPreviewReady = false;
 
-    // 初始化：读取上次勾选的收件人
-    document.addEventListener('DOMContentLoaded', () => {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        document.querySelectorAll('#presetEmails input').forEach(cb => {
-            if(saved.includes(cb.value)) cb.checked = true;
-        });
-    });
-
+    // 1. 拍照相关
     function cam(i) { document.getElementById('f'+i).click(); }
-    
     function read(el, i) {
-        const f = el.files[0];
-        if(!f) return;
-        const r = new FileReader();
-        r.onload = e => {
-            imgs[i] = e.target.result;
+        const file = el.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            images[i] = e.target.result;
             document.getElementById('img'+i).src = e.target.result;
             document.getElementById('img'+i).style.display = 'block';
             el.parentElement.classList.add('done');
         };
-        r.readAsDataURL(f);
+        reader.readAsDataURL(file);
     }
 
-    async function submitData() {
-        const pass = document.getElementById('pass').value;
-        const sender = document.getElementById('sender').value;
-        const text = document.getElementById('txt').value;
+    // 2. 收件人交互 (点击标签加字)
+    const emailInput = document.getElementById('emailInput');
+    // 监听输入框变化，实时更新预览
+    emailInput.addEventListener('input', updateEmailPreview);
+
+    function addEmail(email) {
+        let current = emailInput.value.trim();
+        // 避免重复添加
+        if (current.includes(email)) return;
         
-        // 处理收件人
-        const checkedBoxes = Array.from(document.querySelectorAll('#presetEmails input:checked'));
-        const checkedVals = checkedBoxes.map(c => c.value);
-        const extra = document.getElementById('extraEmail').value;
-        let finalEmails = [...checkedVals];
-        if(extra) finalEmails = finalEmails.concat(extra.split(/[,，\s]+/).filter(e=>e));
+        if (current.length > 0 && !current.endsWith(',')) {
+            current += ',';
+        }
+        emailInput.value = current + email;
+        updateEmailPreview();
+    }
 
-        if(!pass) return alert("请输入密码");
-        if(!sender) return alert("请输入姓名");
-        if(!text) return alert("请输入文本内容");
-        if(finalEmails.length === 0) return alert("请选择至少一个收件人");
-        if(!imgs[0] || !imgs[1] || !imgs[2]) return alert("请拍完三张照片");
+    // 3. 更新邮件预览文字
+    function updateEmailPreview() {
+        const txt = document.getElementById('txt').value || "xxx";
+        document.getElementById('prevTo').innerText = emailInput.value;
+        document.getElementById('prevSubj').innerText = "试身照片: " + txt;
+        document.getElementById('prevTxt').innerText = txt;
+        document.getElementById('prevTxt2').innerText = txt;
+    }
 
-        // 记忆本次选择
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(checkedVals));
+    // 4. 生成 PPT 预览 (核心功能)
+    async function generatePreview() {
+        const txt = document.getElementById('txt').value;
+        if(!txt) return alert("请输入文本内容");
+        if(!images[0] || !images[1] || !images[2]) return alert("请拍完3张照片");
 
-        document.getElementById('btn').innerText = "处理中(约10秒)...";
-        document.getElementById('btn').disabled = true;
+        const btn = document.getElementById('btnPreview');
+        btn.disabled = true;
+        btn.innerText = "生成预览中...";
 
         try {
-            const res = await fetch('/upload', {
+            const res = await fetch('/preview', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({pass, sender, text, recipients: finalEmails.join(','), images: imgs})
+                body: JSON.stringify({ text: txt, images: images })
             });
             const data = await res.json();
-            if(res.ok) {
-                alert("发送成功！");
-                location.reload();
+            
+            if(data.status === 'success') {
+                // 显示图片
+                document.getElementById('pptPreviewImg').src = data.preview;
+                document.getElementById('previewSection').style.display = 'block';
+                // 显示邮件模块
+                document.getElementById('emailSection').style.display = 'block';
+                // 滚动到底部
+                document.getElementById('emailSection').scrollIntoView({behavior: "smooth"});
+                
+                updateEmailPreview(); // 初始化邮件预览
+                isPreviewReady = true;
             } else {
-                alert("失败: " + data.msg);
-                document.getElementById('btn').disabled = false;
-                document.getElementById('btn').innerText = "生成 PPT 并发送";
+                alert("生成预览失败: " + data.msg);
             }
         } catch(e) {
             alert("网络错误");
-            document.getElementById('btn').disabled = false;
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "重新生成预览";
+        }
+    }
+
+    // 5. 最终发送
+    async function sendEmail() {
+        if(!isPreviewReady) return alert("请先生成预览");
+        const recipients = emailInput.value;
+        if(!recipients) return alert("收件人不能为空");
+        
+        const btn = document.getElementById('btnSend');
+        btn.disabled = true;
+        btn.innerText = "正在发送...";
+
+        try {
+            const res = await fetch('/send', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    text: document.getElementById('txt').value,
+                    images: images,
+                    recipients: recipients
+                })
+            });
+            const data = await res.json();
+            if(data.status === 'success') {
+                alert("✅ 发送成功！");
+                location.reload(); // 刷新页面重置
+            } else {
+                alert("❌ 发送失败: " + data.msg);
+                btn.disabled = false;
+                btn.innerText = "确认发送邮件";
+            }
+        } catch(e) {
+            alert("网络错误");
+            btn.disabled = false;
+            btn.innerText = "确认发送邮件";
         }
     }
 </script>
