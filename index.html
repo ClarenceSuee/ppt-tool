@@ -102,17 +102,50 @@
     // 1. 拍照相关
     function cam(i) { document.getElementById('f'+i).click(); }
     function read(el, i) {
-        const file = el.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = e => {
-            images[i] = e.target.result;
-            document.getElementById('img'+i).src = e.target.result;
-            document.getElementById('img'+i).style.display = 'block';
+    const file = el.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            // 1. 创建画布
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // 2. 设置最大宽度 (例如 1024px，足够 PPT 看了)
+            const maxWidth = 1024;
+            let w = img.width;
+            let h = img.height;
+
+            if (w > maxWidth) {
+                h = Math.round((h * maxWidth) / w);
+                w = maxWidth;
+            }
+
+            canvas.width = w;
+            canvas.height = h;
+
+            // 3. 绘制并压缩
+            ctx.drawImage(img, 0, 0, w, h);
+            
+            // 4. 导出为 JPEG，质量 0.7 (压缩率很高，肉眼看不出太大区别)
+            const compressedData = canvas.toDataURL('image/jpeg', 0.7);
+
+            // 5. 存入数组并显示
+            images[i] = compressedData;
+            const displayImg = document.getElementById('img' + i);
+            displayImg.src = compressedData;
+            displayImg.style.display = 'block';
             el.parentElement.classList.add('done');
+            
+            console.log("原图大小:", e.target.result.length);
+            console.log("压缩后大小:", compressedData.length);
         };
-        reader.readAsDataURL(file);
-    }
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
 
     // 2. 收件人交互 (点击标签加字)
     const emailInput = document.getElementById('emailInput');
@@ -218,4 +251,5 @@
 </script>
 </body>
 </html>
+
 
