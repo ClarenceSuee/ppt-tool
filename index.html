@@ -9,41 +9,33 @@
         .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         h3 { margin: 0 0 15px 0; font-size: 16px; border-left: 4px solid #07c160; padding-left: 10px; }
         
-        /* 输入框样式 */
-        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; margin-bottom: 10px; }
         
-        /* 拍照区域 */
         .photo-grid { display: flex; gap: 8px; margin-top: 10px; }
-        .photo-box { flex: 1; aspect-ratio: 3/4; background: #f8f8f8; border: 2px dashed #ccc; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #999; }
+        .photo-box { flex: 1; aspect-ratio: 3/4; background: #f8f8f8; border: 2px dashed #ccc; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #999; overflow: hidden; }
         .photo-box.done { border-style: solid; border-color: #07c160; }
-        .photo-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; border-radius: 6px; display: none; }
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
         
-        /* 按钮样式 */
         .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-blue { background: #1976d2; color: white; }
         .btn-green { background: #07c160; color: white; }
         .btn:disabled { background: #ccc; }
 
-        /* 收件人标签样式 */
         .tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-        .tag { background: #e0e0e0; padding: 6px 12px; border-radius: 20px; font-size: 14px; cursor: pointer; user-select: none; transition: 0.2s; }
+        .tag { background: #e0e0e0; padding: 6px 12px; border-radius: 20px; font-size: 14px; cursor: pointer; user-select: none; }
         .tag:active { transform: scale(0.95); }
-        .tag.selected { background: #e7f7ed; color: #07c160; border: 1px solid #07c160; }
-
-        /* 预览区域 */
-        #previewSection, #emailSection { display: none; } /* 初始隐藏 */
-        .preview-img { width: 100%; border: 1px solid #eee; border-radius: 4px; margin-bottom: 15px; }
         
-        /* 邮件预览框 */
+        .preview-img { width: 100%; border: 1px solid #eee; border-radius: 4px; display: block; min-height: 100px; background: #f0f0f0; }
+        
         .email-preview-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; font-size: 14px; line-height: 1.6; color: #555; margin-bottom: 15px; }
         .email-meta { font-weight: bold; color: #333; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
     </style>
 </head>
 <body>
 
-<!-- 模块1: 制作与预览 -->
+<!-- 模块1: 制作 -->
 <div class="card">
-    <h3>第一步: 制作 PPT</h3>
+    <h3>1. 制作 PPT</h3>
     <input type="text" id="txt" placeholder="请输入文本内容 (如: 24SS-001)">
     
     <div class="photo-grid">
@@ -52,128 +44,119 @@
         <div class="photo-box" onclick="cam(2)"><img id="img2"><span>背视图</span></div>
     </div>
     
-    <button class="btn btn-blue" id="btnPreview" onclick="generatePreview()">生成 PPT 预览</button>
+    <button class="btn btn-blue" id="btnPreview" onclick="generatePreview()">生成 PPT 预览 (仅查看)</button>
     
-    <!-- 隐藏的文件控件 -->
     <input type="file" id="f0" hidden accept="image/*" capture="environment" onchange="read(this,0)">
     <input type="file" id="f1" hidden accept="image/*" capture="environment" onchange="read(this,1)">
     <input type="file" id="f2" hidden accept="image/*" capture="environment" onchange="read(this,2)">
 </div>
 
-<!-- 模块1.5: PPT预览显示区 -->
-<div class="card" id="previewSection">
-    <h3>PPT 效果预览</h3>
-    <img id="pptPreviewImg" class="preview-img">
-    <p style="text-align:center; color:#666; font-size:12px;">(这是根据您的照片模拟的排版效果)</p>
+<!-- 模块2: 预览 (常驻显示) -->
+<div class="card">
+    <h3>2. 预览效果</h3>
+    <img id="pptPreviewImg" class="preview-img" alt="点击上方蓝色按钮生成预览">
 </div>
 
-<!-- 模块2: 邮件发送 -->
-<div class="card" id="emailSection">
-    <h3>第二步: 发送邮件</h3>
+<!-- 模块3: 发送 (常驻显示) -->
+<div class="card">
+    <h3>3. 发送邮件</h3>
     
-    <!-- 收件人标签 -->
-    <div style="margin-bottom:5px; font-size:14px; color:#666;">点击标签添加收件人:</div>
+    <div style="margin-bottom:5px; font-size:14px; color:#666;">常用联系人 (点击添加):</div>
     <div class="tags-container">
-        <!-- 【请在这里配置你的常用联系人】 -->
+        <!-- 【配置常用联系人】 -->
         <div class="tag" onclick="addEmail('boss@company.com')">老板</div>
         <div class="tag" onclick="addEmail('design@company.com')">设计部</div>
         <div class="tag" onclick="addEmail('factory@company.com')">工厂</div>
-        <div class="tag" onclick="addEmail('sales@company.com')">销售</div>
     </div>
-    <input type="text" id="emailInput" placeholder="收件人 (点击上方标签自动填入, 可手写)">
+    <input type="text" id="emailInput" placeholder="收件人邮箱 (可多选, 逗号分隔)">
 
-    <!-- 邮件预览窗口 (只读) -->
-    <div style="margin-top:20px; font-size:14px; color:#666;">邮件内容预览:</div>
     <div class="email-preview-box">
         <div class="email-meta">收件人: <span id="prevTo"></span></div>
         <div class="email-meta">主题: <span id="prevSubj"></span></div>
         Hi All,<br>
-        附件是 [<span id="prevTxt"></span>] 的试身照片, 请注意查收, 谢谢.<br>
-        <span style="font-size:12px; color:#999;">[附件: .pptx]</span>
+        附件是 [<span id="prevTxt"></span>] 的试身照片...
     </div>
 
-    <button class="btn btn-green" id="btnSend" onclick="sendEmail()">确认发送邮件</button>
+    <button class="btn btn-green" id="btnSend" onclick="sendEmail()">确认并发送邮件</button>
 </div>
 
 <script>
     let images = [null, null, null];
-    let isPreviewReady = false;
 
-    // 1. 拍照相关
+    document.addEventListener('DOMContentLoaded', () => {
+        updateEmailPreview();
+    });
+
     function cam(i) { document.getElementById('f'+i).click(); }
+    
+    // 【重点优化】加强版图片压缩：解决网络错误的根本方法
     function read(el, i) {
-    const file = el.files[0];
-    if (!file) return;
+        const file = el.files[0];
+        if (!file) return;
+        
+        const box = el.parentElement;
+        const span = box.querySelector('span');
+        const oldText = span.innerText;
+        span.innerText = "压缩中..."; // 提示用户正在处理
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-            // 1. 创建画布
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            // 2. 设置最大宽度 (例如 1024px，足够 PPT 看了)
-            const maxWidth = 1024;
-            let w = img.width;
-            let h = img.height;
-
-            if (w > maxWidth) {
-                h = Math.round((h * maxWidth) / w);
-                w = maxWidth;
-            }
-
-            canvas.width = w;
-            canvas.height = h;
-
-            // 3. 绘制并压缩
-            ctx.drawImage(img, 0, 0, w, h);
-            
-            // 4. 导出为 JPEG，质量 0.7 (压缩率很高，肉眼看不出太大区别)
-            const compressedData = canvas.toDataURL('image/jpeg', 0.7);
-
-            // 5. 存入数组并显示
-            images[i] = compressedData;
-            const displayImg = document.getElementById('img' + i);
-            displayImg.src = compressedData;
-            displayImg.style.display = 'block';
-            el.parentElement.classList.add('done');
-            
-            console.log("原图大小:", e.target.result.length);
-            console.log("压缩后大小:", compressedData.length);
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                // 压缩参数优化：
+                // 1. 最大宽度 800px (足够PPT和预览清晰度，体积非常小)
+                // 2. 质量 0.6 (视觉上几乎无损，但文件大小减半)
+                const maxWidth = 800; 
+                let w = img.width;
+                let h = img.height;
+                if (w > maxWidth) {
+                    h = Math.round((h * maxWidth) / w);
+                    w = maxWidth;
+                }
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                
+                // 导出为 JPEG, 质量 0.6
+                const compressed = canvas.toDataURL('image/jpeg', 0.6);
+                
+                images[i] = compressed;
+                const displayImg = document.getElementById('img' + i);
+                displayImg.src = compressed;
+                displayImg.style.display = 'block';
+                box.classList.add('done');
+                span.innerText = oldText;
+                
+                // 调试信息：在控制台可以看到图片大小
+                console.log(`图片${i} 压缩后长度: ${compressed.length}`); 
+            };
+            img.src = e.target.result;
         };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-}
+        reader.readAsDataURL(file);
+    }
 
-    // 2. 收件人交互 (点击标签加字)
     const emailInput = document.getElementById('emailInput');
-    // 监听输入框变化，实时更新预览
     emailInput.addEventListener('input', updateEmailPreview);
 
     function addEmail(email) {
-        let current = emailInput.value.trim();
-        // 避免重复添加
-        if (current.includes(email)) return;
-        
-        if (current.length > 0 && !current.endsWith(',')) {
-            current += ',';
-        }
-        emailInput.value = current + email;
+        let val = emailInput.value.trim();
+        if(val.includes(email)) return;
+        if(val && !val.endsWith(',')) val += ',';
+        emailInput.value = val + email;
         updateEmailPreview();
     }
 
-    // 3. 更新邮件预览文字
     function updateEmailPreview() {
         const txt = document.getElementById('txt').value || "xxx";
         document.getElementById('prevTo').innerText = emailInput.value;
         document.getElementById('prevSubj').innerText = "试身照片: " + txt;
         document.getElementById('prevTxt').innerText = txt;
-        document.getElementById('prevTxt2').innerText = txt;
     }
 
-    // 4. 生成 PPT 预览 (核心功能)
+    // 独立功能：生成预览
     async function generatePreview() {
         const txt = document.getElementById('txt').value;
         if(!txt) return alert("请输入文本内容");
@@ -181,7 +164,7 @@
 
         const btn = document.getElementById('btnPreview');
         btn.disabled = true;
-        btn.innerText = "生成预览中...";
+        btn.innerText = "生成中...";
 
         try {
             const res = await fetch('/preview', {
@@ -190,66 +173,63 @@
                 body: JSON.stringify({ text: txt, images: images })
             });
             const data = await res.json();
-            
             if(data.status === 'success') {
-                // 显示图片
                 document.getElementById('pptPreviewImg').src = data.preview;
-                document.getElementById('previewSection').style.display = 'block';
-                // 显示邮件模块
-                document.getElementById('emailSection').style.display = 'block';
-                // 滚动到底部
-                document.getElementById('emailSection').scrollIntoView({behavior: "smooth"});
-                
-                updateEmailPreview(); // 初始化邮件预览
-                isPreviewReady = true;
+                // 注意：这里不再设置“预览完成”的标志，完全独立
             } else {
-                alert("生成预览失败: " + data.msg);
+                alert("预览生成失败: " + data.msg);
             }
         } catch(e) {
-            alert("网络错误");
+            alert("预览失败: 网络错误 (请检查网络或重试)");
+            console.error(e);
         } finally {
             btn.disabled = false;
-            btn.innerText = "重新生成预览";
+            btn.innerText = "生成 PPT 预览 (仅查看)";
         }
     }
 
-    // 5. 最终发送
+    // 独立功能：发送邮件
     async function sendEmail() {
-        if(!isPreviewReady) return alert("请先生成预览");
+        // 【关键修改】移除了 if(!isPreviewGenerated) 的判断
+        // 现在无论是否点过预览，都可以直接发送
+        
         const recipients = emailInput.value;
+        const txt = document.getElementById('txt').value;
+        
+        if(!txt) return alert("请填写文本内容");
         if(!recipients) return alert("收件人不能为空");
+        if(!images[0] || !images[1] || !images[2]) return alert("请拍完3张照片后再发送");
         
         const btn = document.getElementById('btnSend');
         btn.disabled = true;
-        btn.innerText = "正在发送...";
+        btn.innerText = "发送中 (请稍候)...";
 
         try {
             const res = await fetch('/send', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    text: document.getElementById('txt').value,
+                    text: txt,
                     images: images,
                     recipients: recipients
                 })
             });
             const data = await res.json();
             if(data.status === 'success') {
-                alert("✅ 发送成功！");
-                location.reload(); // 刷新页面重置
+                alert("✅ 邮件发送成功！");
+                location.reload();
             } else {
                 alert("❌ 发送失败: " + data.msg);
                 btn.disabled = false;
-                btn.innerText = "确认发送邮件";
+                btn.innerText = "确认并发送邮件";
             }
         } catch(e) {
-            alert("网络错误");
+            alert("网络错误: 数据上传超时或服务器未响应");
+            console.error(e);
             btn.disabled = false;
-            btn.innerText = "确认发送邮件";
+            btn.innerText = "确认并发送邮件";
         }
     }
 </script>
 </body>
 </html>
-
-
