@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>试身照片 PPT 生成器</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 20px; text-align: center; margin-bottom: 20px; color: #333; }
+    
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 12px;
+    }
+    
+    label { display: block; font-size: 14px; color: #666; margin-bottom: 8px; }
+    
+    input[type="text"], input[type="email"], textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-bottom: 12px;
+      font-family: inherit;
+    }
+    
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    
+    .photo-item {
+      text-align: center;
+    }
+    
+    .photo-item input[type="file"] {
+      display: none;
+    }
+    
+    .photo-preview {
+      width: 100%;
+      aspect-ratio: 3/4;
+      border: 2px dashed #1890ff;
+      border-radius: 8px;
+      cursor: pointer;
+      overflow: hidden;
+      background: #f9f9f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    
+    .photo-preview.has-photo {
+      border-style: solid;
+      border-color: #52c41a;
+      background: #f6ffed;
+    }
+    
+    .photo-preview:hover {
+      background: #e6f7ff;
+    }
+    
+    .photo-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .photo-preview .placeholder {
+      color: #1890ff;
+      font-size: 13px;
+      text-align: center;
+      padding: 8px;
+    }
+    
+    .photo-label {
+      display: block;
+      margin-top: 6px;
+      font-size: 13px;
+      color: #666;
+    }
+    
+    .required {
+      color: #ff4d4f;
+    }
+    
+    .contacts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .contact-tag {
+      display: inline-flex;
+      align-items: center;
+      background: #1890ff;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+    }
+    
+    .contact-tag .remove {
+      margin-left: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      opacity: 0.8;
+    }
+    
+    .contact-tag .remove:hover { opacity: 1; }
+    
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary {
+      background: #1890ff;
+      color: white;
+    }
+    
+    .btn-primary:hover { background: #096dd9; }
+    
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+    
+    .btn-secondary:hover { background: #d9d9d9; }
+    
+    .btn:disabled {
+      background: #ccc;
+      color: #999;
+      cursor: not-allowed;
+    }
+    
+    .status {
+      text-align: center;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 14px;
+      display: none;
+    }
+    
+    .status.success { background: #f6ffed; color: #52c41a; display: block; }
+    .status.error { background: #fff2f0; color: #ff4d4f; display: block; }
+    .status.loading { background: #e6f7ff; color: #1890ff; display: block; }
+    
+    .edit-btn {
+      background: none;
+      border: none;
+      color: #1890ff;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px 8px;
+      margin-left: 8px;
+    }
+    
+    .edit-btn:hover { text-decoration: underline; }
+    
+    /* 预览弹窗 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    
+    .modal-overlay.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      max-width: 800px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+    }
+    
+    .modal-close:hover { color: #333; }
+    
+    /* PPT 预览样式 */
+    .ppt-preview {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 30px;
+      margin-bottom: 20px;
+    }
+    
+    .ppt-title {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    
+    .ppt-photos {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .ppt-photo {
+      width: 150px;
+      height: 200px;
+      object-fit: cover;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+    }
+    
+    /* 邮件预览样式 */
+    .email-preview {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+    
+    .email-preview h4 {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .email-content {
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    /* 手机端适配 */
+    @media (max-width: 480px) {
+      body {
+        padding: 12px;
+      }
+      
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .photo-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      
+      .btn-group {
+        flex-direction: column;
+      }
+      
+      .ppt-photo {
+        width: 100px;
+        height: 140px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>📸 试身照片 PPT 生成器</h1>
+  
+  <!-- 款号和样衣性质 -->
+  <div class="card">
+    <div class="card-title">基本信息</div>
+    <div class="input-row">
+      <div>
+        <label>款号 <span class="required">*</span></label>
+        <input type="text" id="styleNumber" placeholder="例如：AW15827">
+      </div>
+      <div>
+        <label>样衣性质 <span class="required">*</span></label>
+        <input type="text" id="sampleType" placeholder="例如：GS Global Development">
+      </div>
+    </div>
+  </div>
+  
+  <!-- 照片上传 -->
+  <div class="card">
+    <div class="card-title">上传照片</div>
+    <div class="photo-grid">
+      <div class="photo-item">
+        <input type="file" id="frontPhoto" accept="image/*" capture="user">
+        <label for="frontPhoto" class="photo-preview" id="frontPreview">
+          <div class="placeholder">📷 正面<br><span class="required">*</span></div>
+        </label>
+        <span class="photo-label">正面 <span class="required">*</span></span>
+      </div>
+      <div class="photo-item">
+        <input type="file" id="sidePhoto" accept="image/*" capture="user">
+        <label for="sidePhoto" class="photo-preview" id="sidePreview">
+          <div class="placeholder">📷 侧面<br>（可选）</div>
+        </label>
+        <span class="photo-label">侧面（可选）</span>
+      </div>
+      <div class="photo-item">
+        <input type="file" id="backPhoto" accept="image/*" capture="user">
+        <label for="backPhoto" class="photo-preview" id="backPreview">
+          <div class="placeholder">📷 背面<br><span class="required">*</span></div>
+        </label>
+        <span class="photo-label">背面 <span class="required">*</span></span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 收件人 -->
+  <div class="card">
+    <div class="card-title">收件人</div>
+    <div class="contacts" id="contactList"></div>
+    <input type="email" id="newEmail" placeholder="输入新邮箱，按回车添加">
+  </div>
+  
+  <!-- 邮件模板 -->
+  <div class="card">
+    <div class="card-title">
+      邮件模板
+      <button class="edit-btn" id="editTemplateBtn" onclick="toggleTemplateEdit()">✏️ 编辑</button>
+    </div>
+    <div id="templateDisplay" class="email-preview">
+      <h4>预览：</h4>
+      <div class="email-content" id="templatePreview"></div>
+    </div>
+    <textarea id="templateEditor" style="display: none;" placeholder="输入邮件模板，支持 HTML 标签"></textarea>
+  </div>
+  
+  <!-- 按钮 -->
+  <div class="btn-group">
+    <button class="btn btn-secondary" onclick="showPreview()">👁️ 预览 PPT</button>
+    <button class="btn btn-primary" id="sendBtn" onclick="generateAndSend()">🚀 生成 PPT 并发送</button>
+  </div>
+  
+  <!-- 状态提示 -->
+  <div class="status" id="status"></div>
+  
+  <!-- PPT 预览弹窗 -->
+  <div class="modal-overlay" id="previewModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">PPT 预览</h3>
+        <button class="modal-close" onclick="closePreview()">&times;</button>
+      </div>
+      <div class="ppt-preview" id="pptPreviewContent">
+        <!-- 动态生成 -->
+      </div>
+      <div class="email-preview">
+        <h4>邮件预览：</h4>
+        <div class="email-content" id="emailPreviewContent"></div>
+      </div>
+      <div class="btn-group" style="margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closePreview()">关闭</button>
+        <button class="btn btn-primary" onclick="closePreviewAndSend()">确认并发送</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // 默认邮件模板
+    const DEFAULT_TEMPLATE = 'Hi All,\n\n附件是 <strong>{styleNumber}</strong> 的试身照片，请注意查收，谢谢。\n\nBest regards,\n试身照片系统';
+    
+    // 常用联系人
+    let contacts = JSON.parse(localStorage.getItem('contacts')) || ['shea.quinn@foxmail.com'];
+    
+    // 图片数据
+    let imageData = {
+      front: null,
+      side: null,
+      back: null
+    };
+    
+    // 渲染联系人列表
+    function renderContacts() {
+      const list = document.getElementById('contactList');
+      list.innerHTML = contacts.map((email, index) => `
+        <span class="contact-tag">
+          ${email}
+          <span class="remove" onclick="removeContact(${index})">×</span>
+        </span>
+      `).join('');
+      localStorage.setItem('contacts', JSON.stringify(contacts));
+      updateTemplatePreview();
+    }
+    
+    // 删除联系人
+    function removeContact(index) {
+      contacts.splice(index, 1);
+      renderContacts();
+    }
+    
+    // 添加新联系人
+    document.getElementById('newEmail').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && this.value.trim()) {
+        const email = this.value.trim();
+        if (!contacts.includes(email)) {
+          contacts.push(email);
+          renderContacts();
+        }
+        this.value = '';
+      }
+    });
+    
+    // 图片上传处理
+    ['front', 'side', 'back'].forEach(type => {
+      const input = document.getElementById(type + 'Photo');
+      const preview = document.getElementById(type + 'Preview');
+      
+      input.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            imageData[type] = e.target.result;
+            preview.classList.add('has-photo');
+            preview.innerHTML = `<img src="${e.target.result}" alt="${type}">`;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    });
+    
+    // 切换模板编辑
+    function toggleTemplateEdit() {
+      const editor = document.getElementById('templateEditor');
+      const display = document.getElementById('templateDisplay');
+      const btn = document.getElementById('editTemplateBtn');
+      
+      if (editor.style.display === 'none') {
+        editor.style.display = 'block';
+        display.style.display = 'none';
+        editor.value = localStorage.getItem('emailTemplate') || DEFAULT_TEMPLATE;
+        btn.textContent = '✓ 保存';
+      } else {
+        localStorage.setItem('emailTemplate', editor.value);
+        editor.style.display = 'none';
+        display.style.display = 'block';
+        btn.textContent = '✏️ 编辑';
+        updateTemplatePreview();
+      }
+    }
+    
+    // 更新模板预览
+    function updateTemplatePreview() {
+      const template = localStorage.getItem('emailTemplate') || DEFAULT_TEMPLATE;
+      const styleNumber = document.getElementById('styleNumber').value || '{款号}';
+      const preview = document.getElementById('templatePreview');
+      preview.innerHTML = template.replace(/{styleNumber}/g, styleNumber);
+    }
+    
+    // 监听款号输入，更新模板预览
+    document.getElementById('styleNumber').addEventListener('input', updateTemplatePreview);
+    
+    // 显示状态
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status ' + type;
+    }
+    
+    // 显示预览
+    function showPreview() {
+      const styleNumber = document.getElementById('styleNumber').value.trim();
+      const sampleType = document.getElementById('sampleType').value.trim();
+      
+      // 验证
+      if (!styleNumber || !sampleType) {
+        showStatus('❌ 请输入款号和样衣性质', 'error');
+        return;
+      }
+      if (!imageData.front || !imageData.back) {
+        showStatus('❌ 请上传正面和背面照片', 'error');
+        return;
+      }
+      
+      // 生成日期
+      const now = new Date();
+      const dateStr = `${now.getMonth() + 1}.${now.getDate()}`;
+      
+      // 生成 PPT 标题
+      const pptTitle = `${styleNumber} - ${sampleType} - ${dateStr}`;
+      
+      // 生成图片列表
+      const photos = [imageData.front];
+      if (imageData.side) photos.push(imageData.side);
+      photos.push(imageData.back);
+      
+      // 渲染 PPT 预览
+      const pptContent = document.getElementById('pptPreviewContent');
+      pptContent.innerHTML = `
+        <div class="ppt-title">${pptTitle}</div>
+        <div class="ppt-photos">
+          ${photos.map(img => `<img src="${img}" class="ppt-photo">`).join('')}
+        </div>
+      `;
+      
+      // 渲染邮件预览
+      const template = localStorage.getItem('emailTemplate') || DEFAULT_TEMPLATE;
+      const emailContent = document.getElementById('emailPreviewContent');
+      emailContent.innerHTML = template.replace(/{styleNumber}/g, styleNumber);
+      
+      // 显示弹窗
+      document.getElementById('previewModal').classList.add('active');
+    }
+    
+    // 关闭预览
+    function closePreview() {
+      document.getElementById('previewModal').classList.remove('active');
+    }
+    
+    // 关闭预览并发送
+    function closePreviewAndSend() {
+      closePreview();
+      generateAndSend();
+    }
+    
+    // 压缩图片
+    function compressImage(base64, maxWidth = 800, quality = 0.7) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const scale = maxWidth / img.width;
+          canvas.width = maxWidth;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = base64;
+      });
+    }
+    
+    // 生成并发送
+    async function generateAndSend() {
+      const styleNumber = document.getElementById('styleNumber').value.trim();
+      const sampleType = document.getElementById('sampleType').value.trim();
+      
+      // 验证
+      if (!styleNumber) {
+        showStatus('❌ 请输入款号', 'error');
+        return;
+      }
+      if (!sampleType) {
+        showStatus('❌ 请输入样衣性质', 'error');
+        return;
+      }
+      if (!imageData.front) {
+        showStatus('❌ 请上传正面照片', 'error');
+        return;
+      }
+      if (!imageData.back) {
+        showStatus('❌ 请上传背面照片', 'error');
+        return;
+      }
+      if (contacts.length === 0) {
+        showStatus('❌ 请至少添加一个收件人', 'error');
+        return;
+      }
+      
+      // 准备发送
+      const btn = document.getElementById('sendBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ 生成中...';
+      showStatus('⏳ 正在生成 PPT 并发送邮件...', 'loading');
+      
+      // 压缩图片
+      const frontCompressed = await compressImage(imageData.front);
+      const sideCompressed = imageData.side ? await compressImage(imageData.side) : null;
+      const backCompressed = await compressImage(imageData.back);
+      
+      // 准备 JSON 数据
+      const jsonData = {
+        styleNumber: styleNumber,
+        sampleType: sampleType,
+        front: frontCompressed,
+        side: sideCompressed,
+        back: backCompressed,
+        recipients: contacts,
+        emailTemplate: localStorage.getItem('emailTemplate') || DEFAULT_TEMPLATE
+      };
+      
+      try {
+        const API_URL = 'https://1407979207-6azm0zymb8.ap-shanghai.tencentscf.com';
+        
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(jsonData)
+        });
+        
+        const responseText = await response.text();
+        console.log('原始响应:', responseText);
+        
+        let result;
+        try {
+          result = JSON.parse(responseText);
+        } catch (e) {
+          showStatus('❌ 响应格式错误：' + responseText.substring(0, 200), 'error');
+          btn.disabled = false;
+          btn.textContent = '🚀 生成 PPT 并发送';
+          return;
+        }
+        
+        if (result.statusCode === 200 || (result.body && JSON.parse(result.body).statusCode === 200)) {
+          showStatus('✅ 发送成功！PPT 已发送到 ' + contacts.length + ' 个邮箱', 'success');
+          // 清空表单
+          document.getElementById('styleNumber').value = '';
+          document.getElementById('sampleType').value = '';
+          document.getElementById('frontPhoto').value = '';
+          document.getElementById('sidePhoto').value = '';
+          document.getElementById('backPhoto').value = '';
+          ['front', 'side', 'back'].forEach(type => {
+            imageData[type] = null;
+            const preview = document.getElementById(type + 'Preview');
+            preview.classList.remove('has-photo');
+            preview.innerHTML = `<div class="placeholder">📷 ${type === 'front' ? '正面' : type === 'side' ? '侧面' : '背面'}<br>${type === 'side' ? '（可选）' : '<span class="required">*</span>'}</div>`;
+          });
+        } else {
+          const errorBody = result.body ? JSON.parse(result.body) : result;
+          showStatus('❌ 发送失败：' + (errorBody.error || errorBody.message || '未知错误'), 'error');
+        }
+      } catch (error) {
+        showStatus('❌ 网络错误：' + error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 生成 PPT 并发送';
+      }
+    }
+    
+    // 初始化
+    renderContacts();
+    updateTemplatePreview();
+  </script>
+</body>
+</html>
